@@ -1,0 +1,62 @@
+name: CI
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    name: Build on Alpine ${{ matrix.ARCH }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ARCH:
+          - x86_64
+          - aarch64
+          - armv7
+          - ppc64le
+          - riscv64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 0  # fetch all history
+
+      - name: Install Alpine Linux Edge for ${{ matrix.ARCH }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.ARCH }}
+          branch: edge
+          packages: >
+            build-base
+            apk-tools-dev
+            collectd
+            collectd-dev
+            json-c-dev
+
+      - name: Get version
+        run: |
+          GIT_TAG=$(git describe --tags --match 'v*' 2>/dev/null || echo ${GITHUB_REF##*/})
+          echo "VERSION=${GIT_TAG#v}" >> $GITHUB_ENV
+
+      - name: Build plugin
+        run: |
+          make build VERSION="${{ env.VERSION }}"
+          ls -lah build/
+          file build/apk.so
+        env:
+          DEBUG: 1
+        shell: alpine.sh {0}
+
+      - name: Install plugin
+        run: make install
+        shell: alpine.sh --root {0}
+
+      - name: Test plugin read
+        run: collectd -C test/collectd.conf -B -T
+        shell: alpine.sh {0}
+
+      - name: Upload plugin to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: build/*.so
+          if-no-files-found: error

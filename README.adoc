@@ -1,0 +1,87 @@
+= Collectd plugin for apk-tools
+:proj-name: collectd-apk
+:version: 0.0.0
+:gh-name: jirutka/{proj-name}
+:apk-tools-url: https://gitlab.alpinelinux.org/alpine/apk-tools
+:collectd-url: https://collectd.org
+:json-c-url: https://github.com/json-c/json-c
+
+A {collectd-url}[collectd] plugin that collects information about packages managed by {apk-tools-url}[apk-tools], a package manager developed for https://alpinelinux.org[Alpine Linux].
+
+
+== Usage
+
+[source]
+----
+<LoadPlugin apk>
+  Interval 720
+</LoadPlugin>
+----
+
+
+== Metrics
+
+This section describes exposed metrics (values).
+
+
+=== apk-upgradeable.count
+
+A number of upgradeable (outdated) packages as reported by `apk list --upgradable --no-cache`.
+
+* *type*: GAUGE (min: 0, max: inf.)
+* *metadata*:
+** *packages* (string): a JSON array of objects with the following keys:
+*** `p`: package name
+*** `o`: package origin (name of the aport)
+*** `v`: old version (currently installed)
+*** `w`: new version (available)
+
+
+== Requirements
+
+.*Runtime*:
+* {collectd-url}[collectd] 5.12+
+* {apk-tools-url}[libapk] 2.x
+* {json-c-url}[libjson-c]
+
+.*Build*:
+* C compiler and linker supporting at least C11 (tested with gcc)
+* pkg-config
+* GNU Make
+* {apk-tools-url}[apk-tools] development files
+* {json-c-url}[json-c] development files
+* {collectd-url}[collectd] development files
+
+The header files needed to build collectd plugins are usually not included in the distribution packages.
+Exceptions are _collectd-dev_ packages in Alpine Linux (since v3.16) and Debian – the core headers are installed in `/usr/include/collectd/core`.
+If you don’t have `/usr/include/collectd/core/daemon/plugin.h`, download the collectd source package from https://collectd.org/download.shtml#source[collectd.org].
+Then build this plugin with variable `COLLECTD_INCLUDE_DIR` pointing to the unpacked `src/` directory: `make build COLLECTD_INCLUDE_DIR=/path/to/src`.
+
+
+== Installation
+
+=== On Alpine Linux
+
+Install package {proj-name} from the Alpine’s Edge testing repository:
+
+[source, sh, subs="+attributes"]
+apk add {proj-name}
+
+
+=== From Source Tarball
+
+[source, sh, subs="+attributes"]
+----
+wget https://github.com/{gh-name}/archive/v{version}/{proj-name}-{version}.tar.gz
+tar -xzf {proj-name}-{version}.tar.gz
+cd {proj-name}-{version}
+
+make build
+make install DESTDIR=/ prefix=/usr
+----
+
+
+== License
+
+This project is licensed under https://opensource.org/licenses/GPL-2.0[GPL-2.0-only].
+For the full text of the license, see the link:LICENSE[LICENSE] file.
