@@ -94,8 +94,8 @@ $(D)/$(TARGET): $(addprefix $(D)/,$(OBJS))
 	$(CC) $(LDFLAGS) -Wl,-soname,$(TARGET) -o $@ $^ $(LIBS)
 
 $(COLLECTD_PLUGIN_H):
-	@echo "$(COLLECTD_PLUGIN_H) does not exist!"
-	@echo "Provide COLLECTD_INCLUDE_DIR variable with the path to the collectd header files directory"
+	@echo "ERROR: $(COLLECTD_PLUGIN_H) does not exist!" >&2
+	@echo "ERROR: Provide COLLECTD_INCLUDE_DIR variable with path to collectd header files directory." >&2
 	@false
 
 .builddir:
