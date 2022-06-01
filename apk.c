@@ -145,7 +145,7 @@ static int apk_upgradeable_read (void) {
 
 	meta_data_t *meta = meta_data_create();
 	if (meta_data_add_string(meta, "packages", pkgs_json) < 0) {
-		log_err("unable to set notification metadata");
+		log_err("unable to set value metadata");
 		goto done;
 	}
 
