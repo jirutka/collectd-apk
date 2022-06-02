@@ -68,7 +68,7 @@ static int dispatch_gauge (const char *plugin_instance, const char *type,
 		.values_len = 1,
 		.meta = meta,
 	};
-	strncpy(vl.plugin_instance, plugin_instance, sizeof(vl.plugin));
+	strncpy(vl.plugin_instance, plugin_instance, sizeof(vl.plugin_instance));
 	strncpy(vl.type, type, sizeof(vl.type));
 
 	int status = plugin_dispatch_values(&vl);
