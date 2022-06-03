@@ -13,11 +13,11 @@ env:
 
 jobs:
   build:
-    name: Build on Alpine ${{ matrix.ARCH }}
+    name: Build on Alpine ${{ matrix.arch }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ARCH:
+        arch:
           - x86_64
           - aarch64
           - armv7
@@ -29,10 +29,10 @@ jobs:
         with:
           fetch-depth: 0  # fetch all history
 
-      - name: Install Alpine Linux Edge for ${{ matrix.ARCH }}
+      - name: Install Alpine Linux Edge for ${{ matrix.arch }}
         uses: jirutka/setup-alpine@v1
         with:
-          arch: ${{ matrix.ARCH }}
+          arch: ${{ matrix.arch }}
           branch: edge
           packages: ${{ env.PACKAGES }}
 
