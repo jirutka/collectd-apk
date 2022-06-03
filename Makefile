@@ -6,6 +6,7 @@ PLUGINDIR     := $(prefix)/lib/collectd
 BUILD_DIR     := build
 
 COLLECTD      := collectd
+CPPCHECK      := cppcheck
 GIT           := git
 INSTALL       := install
 PKG_CONFIG    ?= pkg-config
@@ -35,6 +36,9 @@ CFLAGS        += -Wall -Wextra -pedantic
 CFLAGS        += -std=c11 -fPIC -I$(COLLECTD_INCLUDE_DIR) $(APK_CFLAGS) $(JSONC_CFLAGS)
 LDFLAGS       += -shared
 LIBS          += $(APK_LIBS) $(JSONC_LIBS)
+
+CPPCHECK_INCL  = -I/usr/include $(filter -I%,$(CFLAGS))
+CPPCHECK_OPTS  = --config-exclude=/usr/include --std=c11 --library=posix --enable=all --inline-suppr --error-exitcode=1
 
 SRCS           = apk.c
 OBJS           = $(SRCS:.c=.o)
@@ -66,7 +70,11 @@ clean:
 check: build
 	$(COLLECTD) -C test/collectd.conf -B -T
 
-.PHONY: check
+#: Run cppcheck (static code analysis).
+cppcheck: $(SRCS)
+	$(CPPCHECK) $(CPPCHECK_INCL) $(CPPCHECK_OPTS) $^
+
+.PHONY: check cppcheck
 
 #: Install plugin into $DESTDIR/$PLUGINDIR.
 install:

@@ -162,6 +162,7 @@ done:
 	return rc;
 }
 
+// cppcheck-suppress unusedFunction
 void module_register (void) {
 	// Cached APKINDEXes may be outdated and we would need root privileges to
 	// update them, so better to always fetch fresh APKINDEXes in-memory.

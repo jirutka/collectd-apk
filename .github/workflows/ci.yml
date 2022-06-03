@@ -3,6 +3,14 @@ on:
   - push
   - pull_request
 
+env:
+  PACKAGES: >
+    build-base
+    apk-tools-dev
+    collectd
+    collectd-dev
+    json-c-dev
+
 jobs:
   build:
     name: Build on Alpine ${{ matrix.ARCH }}
@@ -26,12 +34,7 @@ jobs:
         with:
           arch: ${{ matrix.ARCH }}
           branch: edge
-          packages: >
-            build-base
-            apk-tools-dev
-            collectd
-            collectd-dev
-            json-c-dev
+          packages: ${{ env.PACKAGES }}
 
       - name: Get version
         run: |
@@ -60,3 +63,20 @@ jobs:
         with:
           path: build/*.so
           if-no-files-found: error
+
+  lint:
+    name: Run cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install Alpine Linux Edge
+        uses: jirutka/setup-alpine@v1
+        with:
+          branch: edge
+          packages: ${{ env.PACKAGES }} cppcheck
+
+      - name: Run cppcheck
+        run: make cppcheck
+        shell: alpine.sh {0}
