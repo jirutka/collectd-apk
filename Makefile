@@ -5,9 +5,10 @@ PLUGINDIR     := $(prefix)/lib/collectd
 
 BUILD_DIR     := build
 
-PKG_CONFIG    ?= pkg-config
-INSTALL       := install
+COLLECTD      := collectd
 GIT           := git
+INSTALL       := install
+PKG_CONFIG    ?= pkg-config
 SED           := sed
 
 GIT_REV       := $(shell test -d .git && $(GIT) describe --tags --match 'v*' 2>/dev/null)
@@ -60,6 +61,12 @@ clean:
 	rm -rf "$(D)"
 
 .PHONY: build clean
+
+#: Execute collectd with the built plugin, run read once and exit.
+check: build
+	$(COLLECTD) -C test/collectd.conf -B -T
+
+.PHONY: check
 
 #: Install plugin into $DESTDIR/$PLUGINDIR.
 install:

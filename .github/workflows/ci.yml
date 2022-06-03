@@ -47,13 +47,13 @@ jobs:
           DEBUG: 1
         shell: alpine.sh {0}
 
-      - name: Install plugin
+      - name: Test plugin read
+        run: make check
+        shell: alpine.sh {0}
+
+      - name: Run make install
         run: make install
         shell: alpine.sh --root {0}
-
-      - name: Test plugin read
-        run: collectd -C test/collectd.conf -B -T
-        shell: alpine.sh {0}
 
       - name: Upload plugin to artifacts
         uses: actions/upload-artifact@v2
