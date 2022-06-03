@@ -83,5 +83,5 @@ make install DESTDIR=/ prefix=/usr
 
 == License
 
-This project is licensed under https://opensource.org/licenses/GPL-2.0[GPL-2.0-only].
+This project is licensed under https://opensource.org/licenses/GPL-2.0[GPL-2.0-or-later].
 For the full text of the license, see the link:LICENSE[LICENSE] file.
