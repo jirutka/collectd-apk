@@ -85,7 +85,7 @@ release: .check-git-clean | bump-version
 	$(GIT) commit -m "Release version $(VERSION)"
 	$(GIT) tag -s v$(VERSION) -m v$(VERSION)
 
-.PHONY: build-version release
+.PHONY: bump-version release
 
 $(D)/%.o: %.c | .builddir $(COLLECTD_PLUGIN_H)
 	$(CC) $(CFLAGS) $(if $(VERSION),-DPLUGIN_VERSION='"$(VERSION)"') -o $@ -c $<
