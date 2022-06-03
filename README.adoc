@@ -24,9 +24,9 @@ A {collectd-url}[collectd] plugin that collects information about packages manag
 This section describes exposed metrics (values).
 
 
-=== apk-upgradeable.count
+=== apk-upgradable.count
 
-A number of upgradeable (outdated) packages as reported by `apk list --upgradable --no-cache`.
+A number of upgradable (outdated) packages as reported by `apk list --upgradable --no-cache`.
 
 * *type*: GAUGE (min: 0, max: inf.)
 * *metadata*:

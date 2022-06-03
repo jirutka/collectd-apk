@@ -105,7 +105,7 @@ static json_object *apk_change_to_json (struct apk_change *change) {
 	return obj;
 }
 
-static int apk_upgradeable_read (void) {
+static int apk_upgradable_read (void) {
 	int rc = -1;
 
 	json_object *pkgs = json_object_new_array();
@@ -150,7 +150,7 @@ static int apk_upgradeable_read (void) {
 		goto done;
 	}
 
-	dispatch_gauge("upgradeable", "count", count, meta);
+	dispatch_gauge("upgradable", "count", count, meta);
 
 	rc = 0;
 done:
@@ -169,5 +169,5 @@ void module_register (void) {
 	apk_flags = APK_NO_CACHE | APK_SIMULATE;
 
 	INFO("registering plugin " PLUGIN_NAME " " PLUGIN_VERSION);
-	plugin_register_read(PLUGIN_NAME, apk_upgradeable_read);
+	plugin_register_read(PLUGIN_NAME, apk_upgradable_read);
 }
