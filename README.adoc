@@ -30,6 +30,8 @@ A number of upgradable (outdated) packages as reported by `apk list --upgradable
 
 * *type*: GAUGE (min: 0, max: inf.)
 * *metadata*:
+** *os-id* (string): the value of `ID` in _/etc/os-release_ (e.g. `alpine`)
+** *os-version* (string): the value of `VERSION_ID` in _/etc/os-release_ (e.g. `3.16.0`)
 ** *packages* (string): a JSON array of objects with the following keys:
 *** `p`: package name
 *** `o`: package origin (name of the aport)

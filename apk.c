@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <apk/apk_blob.h>
@@ -22,13 +24,19 @@
   #define PLUGIN_VERSION "0.1.0"
 #endif
 
-#define LOG_PREFIX PLUGIN_NAME " plugin: "
+#define OS_RELEASE_PATH "/etc/os-release"
 
-#define UNUSED __attribute__((unused))
+#define LOG_PREFIX PLUGIN_NAME " plugin: "
 
 #define log_info(...) INFO(LOG_PREFIX __VA_ARGS__)
 #define log_warn(...) WARNING(LOG_PREFIX __VA_ARGS__)
 #define log_err(...) ERROR(LOG_PREFIX __VA_ARGS__)
+
+#ifndef min
+  #define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define UNUSED __attribute__((unused))
 
 extern unsigned int apk_flags;
 extern int apk_verbosity;
@@ -59,6 +67,62 @@ void apk_log_err (const char *prefix, const char *format, ...) {
 	} else {
 		log_warn("%s", msg);
 	}
+}
+
+// This is a very simplified implementation, it does not support escaping
+// (`"behold \"x\" var"`) nor doubled quote character (`"dont ""do this"`).
+static int parse_enclosed_word (char *dest, const char *str, size_t max_len) {
+	size_t len = 0;
+	const char *end = NULL;
+
+	// /^"([^"]*)".*/ or /^'([^']*)'.*/
+	if (str[0] == '"' || str[0] == '\'') {
+		if (!(end = strchr(str + 1, str[0]))) {
+			return -1;
+		}
+		len = end - ++str;
+	// /^([^ \t\r\n;]*).*/
+	} else {
+		len = strcspn(str, " \t\r\n;");
+	}
+	strncpy(dest, str, min(len, max_len));
+
+	return len;
+}
+
+struct os_release {
+	char id[64];
+	char version_id[64];
+};
+
+static int read_os_release (struct os_release *dest) {
+	FILE *fp = NULL;
+
+	if (!(fp = fopen(OS_RELEASE_PATH, "r"))) {
+		return -1;
+	}
+
+	char line[128] = {0};
+	while (fgets(line, sizeof(line), fp)) {
+		char key[16] = {0};
+		int pos = 0;
+		if (sscanf(line, " %15[A-Za-z0-9_]=%n", key, &pos) < 1) {
+		//                ^ ^-- this MUST match sizeof(key) - 1
+		//                `---- allow zero or more whitespace chars at the beginning
+			continue;
+		}
+		char *rest = line + pos;
+
+		if (strcmp(key, "ID") == 0) {
+			parse_enclosed_word(dest->id, rest, sizeof(dest->id));
+		} else if (strcmp(key, "VERSION_ID") == 0) {
+			parse_enclosed_word(dest->version_id, rest, sizeof(dest->version_id));
+		}
+
+	}
+	fclose(fp);
+
+	return 0;
 }
 
 static int dispatch_gauge (const char *plugin_instance, const char *type,
@@ -142,14 +206,23 @@ static int apk_upgradable_read (void) {
 		apk_change_array_free(&changeset.changes);
 	}
 
-	const char *pkgs_json = json_object_to_json_string_ext(pkgs, JSON_C_TO_STRING_PLAIN);
-	log_info("packages = %s", pkgs_json);
-
 	meta_data_t *meta = meta_data_create();
+
+	const char *pkgs_json = json_object_to_json_string_ext(pkgs, JSON_C_TO_STRING_PLAIN);
 	if (meta_data_add_string(meta, "packages", pkgs_json) < 0) {
 		log_err("unable to set value metadata");
 		goto done;
 	}
+
+	struct os_release os = { "", "" };
+	if (read_os_release(&os) < 0) {
+		log_warn("failed to read " OS_RELEASE_PATH ": %s", strerror(errno));
+	}
+	meta_data_add_string(meta, "os-id", os.id);
+	meta_data_add_string(meta, "os-version", os.version_id);
+
+	log_info("metadata: os-id = \"%s\", os-version = \"%s\", packages = %s",
+	         os.id, os.version_id, pkgs_json);
 
 	dispatch_gauge("upgradable", "count", count, meta);
 
