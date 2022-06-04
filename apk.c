@@ -190,12 +190,10 @@ static int apk_upgradable_read (void) {
 		goto done;
 	}
 
-	int count = 0;
 	{
 		struct apk_change *change;
 		foreach_array_item(change, changeset.changes) {
 			if (change->old_pkg != change->new_pkg) {
-				count++;
 				json_object_array_add(pkgs, apk_change_to_json(change));
 			}
 		}
@@ -218,7 +216,7 @@ static int apk_upgradable_read (void) {
 	log_info("metadata: os-id = \"%s\", os-version = \"%s\", packages = %s",
 	         os.id, os.version_id, pkgs_json);
 
-	dispatch_gauge("upgradable", "count", count, meta);
+	dispatch_gauge("upgradable", "count", json_object_array_length(pkgs), meta);
 
 	rc = 0;
 done:
