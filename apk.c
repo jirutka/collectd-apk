@@ -165,6 +165,26 @@ static json_object *apk_change_to_json (struct apk_change *change) {
 	return obj;
 }
 
+static int find_upgradable_pkgs (struct apk_database *db, json_object *array) {
+	assert(db && db->open_complete);
+	assert(json_object_is_type(array, json_type_array));
+
+	struct apk_changeset changeset = {0};
+	if (apk_solver_solve(db, APK_SOLVERF_UPGRADE, db->world, &changeset) != 0) {
+		return -1;
+	}
+
+	struct apk_change *change;
+	foreach_array_item(change, changeset.changes) {
+		if (change->old_pkg != change->new_pkg) {
+			json_object_array_add(array, apk_change_to_json(change));
+		}
+	}
+	apk_change_array_free(&changeset.changes);
+
+	return 0;
+}
+
 static int apk_upgradable_read (void) {
 	int rc = -1;
 
@@ -184,25 +204,14 @@ static int apk_upgradable_read (void) {
 		goto done;
 	}
 
-	struct apk_changeset changeset = {0};
-	if (apk_solver_solve(&db, APK_SOLVERF_UPGRADE, db.world, &changeset) != 0) {
-		log_err("apk solver returned errors");
+	if (find_upgradable_pkgs(&db, pkgs) < 0) {
+		log_err("failed to find upgradable packages, apk solver returned errors");
 		goto done;
-	}
-
-	{
-		struct apk_change *change;
-		foreach_array_item(change, changeset.changes) {
-			if (change->old_pkg != change->new_pkg) {
-				json_object_array_add(pkgs, apk_change_to_json(change));
-			}
-		}
-		apk_change_array_free(&changeset.changes);
 	}
 
 	const char *pkgs_json = json_object_to_json_string_ext(pkgs, JSON_C_TO_STRING_PLAIN);
 	if (meta_data_add_string(meta, "packages", pkgs_json) < 0) {
-		log_err("unable to set value metadata");
+		log_err("failed to add value metadata");
 		goto done;
 	}
 
