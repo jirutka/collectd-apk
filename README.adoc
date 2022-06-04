@@ -1,6 +1,6 @@
 = Collectd plugin for apk-tools
 :proj-name: collectd-apk
-:version: 0.1.0
+:version: 0.2.0
 :gh-name: jirutka/{proj-name}
 :apk-tools-url: https://gitlab.alpinelinux.org/alpine/apk-tools
 :collectd-url: https://collectd.org
