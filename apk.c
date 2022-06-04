@@ -136,12 +136,7 @@ static int dispatch_gauge (const char *plugin_instance, const char *type,
 	strncpy(vl.plugin_instance, plugin_instance, sizeof(vl.plugin_instance));
 	strncpy(vl.type, type, sizeof(vl.type));
 
-	int status = plugin_dispatch_values(&vl);
-
-	if (meta != NULL) {
-		meta_data_destroy(meta);
-	}
-	return status;
+	return plugin_dispatch_values(&vl);
 }
 
 static json_object *apk_change_to_json (struct apk_change *change) {
@@ -174,6 +169,7 @@ static int apk_upgradable_read (void) {
 	int rc = -1;
 
 	json_object *pkgs = json_object_new_array();
+	meta_data_t *meta = meta_data_create();
 
 	struct apk_db_options db_opts = {0};
 	list_init(&db_opts.repository_list);
@@ -206,8 +202,6 @@ static int apk_upgradable_read (void) {
 		apk_change_array_free(&changeset.changes);
 	}
 
-	meta_data_t *meta = meta_data_create();
-
 	const char *pkgs_json = json_object_to_json_string_ext(pkgs, JSON_C_TO_STRING_PLAIN);
 	if (meta_data_add_string(meta, "packages", pkgs_json) < 0) {
 		log_err("unable to set value metadata");
@@ -231,6 +225,7 @@ done:
 	if (db.open_complete) {
 		apk_db_close(&db);
 	}
+	meta_data_destroy(meta);
 	json_object_put(pkgs);
 
 	return rc;
