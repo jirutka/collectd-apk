@@ -14,7 +14,7 @@ A {collectd-url}[collectd] plugin that collects information about packages manag
 [source]
 ----
 <LoadPlugin apk>
-  Interval 720
+  Interval 86400  # 1 day
 </LoadPlugin>
 ----
 
