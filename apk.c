@@ -112,7 +112,7 @@ static int read_os_release (struct os_release *dest) {
 		//                `---- allow zero or more whitespace chars at the beginning
 			continue;
 		}
-		char *rest = line + pos;
+		const char *rest = line + pos;
 
 		if (strcmp(key, "ID") == 0) {
 			parse_enclosed_word(dest->id, rest, sizeof(dest->id));
@@ -140,7 +140,7 @@ static int dispatch_gauge (const char *plugin_instance, const char *type,
 	return plugin_dispatch_values(&vl);
 }
 
-static json_object *apk_change_to_json (struct apk_change *change) {
+static json_object *apk_change_to_json (const struct apk_change *change) {
 	const struct apk_package *old_pkg = change->old_pkg,
 	                         *new_pkg = change->new_pkg;
 
@@ -148,7 +148,7 @@ static json_object *apk_change_to_json (struct apk_change *change) {
 	assert(old_pkg->name && "change.old_pkg.name is NULL");
 	assert(new_pkg && "change.new_pkg is NULL");
 
-	char *pkgname = old_pkg->name->name;
+	const char *pkgname = old_pkg->name->name;
 	char *origin = apk_blob_cstr(*old_pkg->origin);
 	char *old_ver = apk_blob_cstr(*old_pkg->version);
 	char *new_ver = apk_blob_cstr(*new_pkg->version);
