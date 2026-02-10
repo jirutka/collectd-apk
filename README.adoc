@@ -43,7 +43,7 @@ A number of upgradable (outdated) packages as reported by `apk list --upgradable
 
 .*Runtime*:
 * {collectd-url}[collectd] 5.12+
-* {apk-tools-url}[libapk] 2.x
+* {apk-tools-url}[libapk] 3.x
 * {json-c-url}[libjson-c]
 
 .*Build*:

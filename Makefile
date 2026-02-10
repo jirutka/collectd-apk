@@ -38,7 +38,7 @@ LDFLAGS       += -shared
 LIBS          += $(APK_LIBS) $(JSONC_LIBS)
 
 CPPCHECK_INCL  = -I/usr/include $(filter -I%,$(CFLAGS))
-CPPCHECK_OPTS  = --config-exclude=/usr/include --std=c11 --library=posix --enable=all --inline-suppr --error-exitcode=1
+CPPCHECK_OPTS  = --suppress=*:usr/include/** --std=c11 --library=posix --enable=all --disable=information --inline-suppr --error-exitcode=1
 
 SRCS           = apk.c
 OBJS           = $(SRCS:.c=.o)

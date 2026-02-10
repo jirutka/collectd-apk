@@ -39,9 +39,6 @@
 
 #define UNUSED __attribute__((unused))
 
-extern unsigned int apk_flags;
-extern int apk_verbosity;
-
 // Override function from libapk defined in src/print.c.
 void apk_log (const char UNUSED *_prefix, const char *format, ...) {
 	va_list ap;
@@ -112,7 +109,7 @@ static int read_os_release (struct os_release *dest) {
 		//                `---- allow zero or more whitespace chars at the beginning
 			continue;
 		}
-		char *rest = line + pos;
+		const char *rest = line + pos;
 
 		if (strcmp(key, "ID") == 0) {
 			parse_enclosed_word(dest->id, rest, sizeof(dest->id));
@@ -140,7 +137,7 @@ static int dispatch_gauge (const char *plugin_instance, const char *type,
 	return plugin_dispatch_values(&vl);
 }
 
-static json_object *apk_change_to_json (struct apk_change *change) {
+static json_object *apk_change_to_json (const struct apk_change *change) {
 	const struct apk_package *old_pkg = change->old_pkg,
 	                         *new_pkg = change->new_pkg;
 
@@ -148,7 +145,7 @@ static json_object *apk_change_to_json (struct apk_change *change) {
 	assert(old_pkg->name && "change.old_pkg.name is NULL");
 	assert(new_pkg && "change.new_pkg is NULL");
 
-	char *pkgname = old_pkg->name->name;
+	const char *pkgname = old_pkg->name->name;
 	char *origin = apk_blob_cstr(*old_pkg->origin);
 	char *old_ver = apk_blob_cstr(*old_pkg->version);
 	char *new_ver = apk_blob_cstr(*new_pkg->version);
@@ -170,20 +167,25 @@ static int find_upgradable_pkgs (struct apk_database *db, json_object *array) {
 	assert(db && db->open_complete);
 	assert(json_object_is_type(array, json_type_array));
 
+	int rc = -1;
 	struct apk_changeset changeset = {0};
+	apk_change_array_init(&changeset.changes);
+
 	if (apk_solver_solve(db, APK_SOLVERF_UPGRADE, db->world, &changeset) != 0) {
-		return -1;
+		goto done;
 	}
 
-	struct apk_change *change;
-	foreach_array_item(change, changeset.changes) {
-		if (change->old_pkg != change->new_pkg) {
+	apk_array_foreach(change, changeset.changes) {
+		if (change->old_pkg && change->new_pkg && change->old_pkg != change->new_pkg) {
 			json_object_array_add(array, apk_change_to_json(change));
 		}
 	}
+
+	rc = 0;
+done:
 	apk_change_array_free(&changeset.changes);
 
-	return 0;
+	return rc;
 }
 
 static int apk_upgradable_read (void) {
@@ -192,15 +194,21 @@ static int apk_upgradable_read (void) {
 	json_object *pkgs = json_object_new_array();
 	meta_data_t *meta = meta_data_create();
 
-	struct apk_db_options db_opts = {0};
-	list_init(&db_opts.repository_list);
-	db_opts.open_flags = APK_OPENF_READ | APK_OPENF_NO_AUTOUPDATE;
+	apk_crypto_init();
+
+	struct apk_ctx ac = {0};
+	apk_ctx_init(&ac);
+	// Cached APKINDEXes may be outdated and we would need root privileges to
+	// update them, so better to always fetch fresh APKINDEXes in-memory.
+	ac.flags = APK_NO_CACHE | APK_SIMULATE;
+	ac.open_flags = APK_OPENF_READ | APK_OPENF_NO_AUTOUPDATE;
+	apk_ctx_prepare(&ac);
 
 	struct apk_database db;
-	apk_db_init(&db);
+	apk_db_init(&db, &ac);
 
 	int r = 0;
-	if ((r = apk_db_open(&db, &db_opts)) != 0) {
+	if ((r = apk_db_open(&db)) != 0) {
 		log_err("failed to open apk database: %s", apk_error_str(r));
 		goto done;
 	}
@@ -230,9 +238,7 @@ static int apk_upgradable_read (void) {
 
 	rc = 0;
 done:
-	if (db.open_complete) {
-		apk_db_close(&db);
-	}
+	apk_db_close(&db);
 	meta_data_destroy(meta);
 	json_object_put(pkgs);
 
@@ -241,10 +247,6 @@ done:
 
 // cppcheck-suppress unusedFunction
 void module_register (void) {
-	// Cached APKINDEXes may be outdated and we would need root privileges to
-	// update them, so better to always fetch fresh APKINDEXes in-memory.
-	apk_flags = APK_NO_CACHE | APK_SIMULATE;
-
 	INFO("registering plugin " PLUGIN_NAME " " PLUGIN_VERSION);
 	plugin_register_read(PLUGIN_NAME, apk_upgradable_read);
 }

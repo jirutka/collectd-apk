@@ -59,8 +59,9 @@ jobs:
         shell: alpine.sh --root {0}
 
       - name: Upload plugin to artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v6
         with:
+          name: ${{ matrix.arch }}
           path: build/*.so
           if-no-files-found: error
 
@@ -69,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install Alpine Linux Edge
         uses: jirutka/setup-alpine@v1
